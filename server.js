@@ -190,28 +190,28 @@ ${report.join("\n")}
     }
   }
 
-  // --- কেইস ৬: SILL OR LOT REPORT (সিল বা লট নম্বর দিয়ে সার্চ) ---
-  const sillLotMatch = question.match(/(\d{3,})/);
-  if (sillLotMatch) {
-    const inputNumber = normalizeSill(sillLotMatch[1]);
+
+  // --- কেইস ৬: SILL OR LOT SIZE SEARCH (সিল বা লট সাইজ দিয়ে সার্চ) ---
+  const numMatch = question.match(/(\d{3,})/);
+  if (numMatch) {
+    const inputNumber = normalizeSill(numMatch[1]);
     
-    // সিল অথবা লট নম্বর দিয়ে ম্যাচ করা
+    // সিল (Column 1) অথবা লট সাইজ (Column 5) দিয়ে ম্যাচ করা
     const matchingRows = db.grey.slice(1).filter(row => 
-      normalizeSill(row[1]) === inputNumber || normalizeSill(row[4]) === inputNumber
+      normalizeSill(row[1]) === inputNumber || normalizeSill(row[5]) === inputNumber
     );
 
     if (matchingRows.length > 0) {
       let totalLotSize = 0;
       let totalDyeingSize = 0;
       
-      // ১০টির বেশি হলে শেষের ১০টি দেখাবে
+      // ১০টির বেশি হলে শুধু শেষের ১০টি দেখাবে
       const limitedRows = matchingRows.slice(-10);
 
       const reportBlocks = limitedRows.map(greyRow => {
         const sill = normalizeSill(greyRow[1]);
-        const lotNo = normalizeSill(greyRow[4]);
         const party = greyRow[2] || "N/A";
-        const quality = greyRow[3] || "N/A";
+        const quality = greyRow[3] || "N/A"; 
         const lotQty = parseFloat(greyRow[5]?.replace(/,/g, "")) || 0;
         
         const sumSill = (s) => db[s].slice(1).reduce((t, r) => 
@@ -233,11 +233,11 @@ ${report.join("\n")}
         totalLotSize += lotQty;
         totalDyeingSize += dyeingTotal;
 
-        return `🆔 **Sill No: ${sill}** (Lot: ${lotNo})
+        return `🆔 **Sill No: ${sill}**
 ━━━━━━━━━━━━━━━━━━━━━━━━
 👤 **Party** : ${party}
 📄 **Quality** : ${quality}
-📦 **Lot Size** : ${lotQty.toLocaleString()} yds
+📏 **Lot Size** : ${lotQty.toLocaleString()} yds
 
 ⚙️ **Pre-Process Section:**
 • Singing    : ${s.toLocaleString()} yds
@@ -253,17 +253,18 @@ ${report.join("\n")}
 🧺 **Finishing:**
 • Folding    : ${f.toLocaleString()} yds
 📍 **Total Dyeing: ${dyeingTotal.toLocaleString()} yds**
-⚠️ **Status: ${diff <= 0 ? "🟢 EXTRA" : "🔴 SHORT"} (${Math.abs(diff).toLocaleString()} yds)**`;
+⚠️ **Status: ${diff <= 0 ? "🟢 EXTRA" : "🔴 SHORT"} (${Math.abs(diff).toLocaleString()})**`;
       });
 
-      let finalReply = `🤖 📊 **DETAILED PRODUCTION REPORT: ${inputNumber}**\n\n`;
+      let title = matchingRows.length > 1 ? "LOT SIZE SUMMARY" : "DETAILED PRODUCTION";
+      let finalReply = `🤖 📊 **${title} REPORT: ${inputNumber}**\n\n`;
       finalReply += reportBlocks.join("\n\n---\n\n");
       
       if (matchingRows.length > 1) {
         finalReply += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ **OVERALL SUMMARY (${matchingRows.length} Sills)**
-📦 **Total Lot    :** ${totalLotSize.toLocaleString()} yds
-🎨 **Total Dyeing :** ${totalDyeingSize.toLocaleString()} yds
+📏 **Total Lot Size :** ${totalLotSize.toLocaleString()} yds
+🎨 **Total Dyeing   :** ${totalDyeingSize.toLocaleString()} yds
 ━━━━━━━━━━━━━━━━━━━━━━━━`;
       }
 
