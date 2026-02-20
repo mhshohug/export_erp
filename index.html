@@ -1,33 +1,170 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Factory AI Chat</title>
+<title>Factory ERP AI</title>
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#fff;display:flex;flex-direction:column;height:100vh;overflow:hidden}
-header{background:#1e293b;padding:12px;text-align:center;font-weight:bold;font-size:18px}
-#chat{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;padding-bottom:80px}
-.msg{max-width:80%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;line-height:1.4}
-.user{align-self:flex-end;background:#2563eb}
-.bot{align-self:flex-start;background:#334155}
-footer{position:fixed;bottom:0;left:0;width:100%;display:flex;padding:10px;background:#1e293b}
-input{flex:1;padding:12px;border:none;border-radius:10px;font-size:16px}
-button{margin-left:10px;padding:12px 18px;border:none;border-radius:10px;background:#22c55e;color:#000;font-weight:bold;cursor:pointer}
-button:hover{background:#16a34a}
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --user-msg: #2563eb;
+    --bot-msg: #334155;
+    --accent: #22c55e;
+  }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: var(--card);
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    z-index: 10;
+  }
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* ইনপুট বক্সের জন্য নিচে জায়গা রাখা হয়েছে */
+    padding-bottom: 90px; 
+    scroll-behavior: smooth;
+  }
+  .msg {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-size: 15px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .user {
+    align-self: flex-end;
+    background: var(--user-msg);
+    color: white;
+    border-bottom-right-radius: 2px;
+  }
+  .bot {
+    align-self: flex-start;
+    background: var(--bot-msg);
+    color: #e2e8f0;
+    border-bottom-left-radius: 2px;
+    border: 1px solid #475569;
+  }
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--card);
+    box-sizing: border-box;
+    gap: 10px;
+    border-top: 1px solid #334155;
+  }
+  input {
+    flex: 1;
+    padding: 14px;
+    border: 1px solid #334155;
+    border-radius: 25px;
+    font-size: 16px;
+    background: #0f172a;
+    color: white;
+    outline: none;
+  }
+  input:focus {
+    border-color: var(--user-msg);
+  }
+  button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    background: var(--accent);
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  button:active {
+    transform: scale(0.95);
+  }
+  /* স্ক্রলবার সুন্দর করার জন্য */
+  #chat::-webkit-scrollbar { width: 5px; }
+  #chat::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 </style>
 </head>
 <body>
 <header>🏭 34" Factory ERP AI</header>
-<div id="chat"></div>
+
+<div id="chat">
+  <div class="msg bot">ওস্তাদ, সিল নম্বর, তারিখ বা লট সাইজ লিখে প্রোডাকশন রিপোর্ট চেক করুন!</div>
+</div>
+
 <footer>
-<input id="q" placeholder="Type: noor cpb / 656 / today / total dyeing" />
-<button onclick="send()">Send</button>
+  <input id="q" placeholder="Type: 656 / 32330 / today" autocomplete="off" />
+  <button onclick="send()">Send</button>
 </footer>
+
 <script>
-const chat=document.getElementById('chat');
-function add(text,type){const d=document.createElement('div');d.className='msg '+type;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
-async function send(){const input=document.getElementById('q');const text=input.value.trim();if(!text)return;add(text,'user');input.value='';try{const r=await fetch('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:text})});const j=await r.json();add(j.reply,'bot')}catch(e){add('Server error','bot')}}
-document.getElementById('q').addEventListener('keypress',e=>{if(e.key==='Enter')send()});
+const chat = document.getElementById('chat');
+const input = document.getElementById('q');
+
+// টেক্সট ফরমেটিং (বোল্ড সাপোর্ট করার জন্য)
+function formatText(text) {
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+function add(text, type) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + type;
+  // innerHTML ব্যবহার করা হয়েছে যেন **Bold** কাজ করে
+  d.innerHTML = formatText(text); 
+  chat.appendChild(d);
+  
+  // নতুন মেসেজ আসলে অটো নিচে স্ক্রল হবে
+  setTimeout(() => {
+    chat.scrollTop = chat.scrollHeight;
+  }, 100);
+}
+
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  add(text, 'user');
+  input.value = '';
+
+  try {
+    const r = await fetch('/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: text })
+    });
+    const j = await r.json();
+    add(j.reply, 'bot');
+  } catch (e) {
+    add('⚠️ সার্ভার কানেকশন এরর!', 'bot');
+  }
+}
+
+input.addEventListener('keypress', e => {
+  if (e.key === 'Enter') send();
+});
 </script>
 </body>
 </html>
