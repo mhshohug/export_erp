@@ -190,7 +190,7 @@ ${report.join("\n")}
     }
   }
 
-    // --- কেইস ৬: SILL OR LOT REPORT (সিল বা লট নম্বর দিয়ে সার্চ) ---
+  // --- কেইস ৬: SILL OR LOT REPORT (সিল বা লট নম্বর দিয়ে সার্চ) ---
   const sillLotMatch = question.match(/(\d{3,})/);
   if (sillLotMatch) {
     const inputNumber = normalizeSill(sillLotMatch[1]);
@@ -204,38 +204,73 @@ ${report.join("\n")}
       let totalLotSize = 0;
       let totalDyeingSize = 0;
       
-      // ১০টির বেশি হলে শুধু শেষের ১০টি দেখাবে (লিমিট সেট করা হয়েছে)
+      // ১০টির বেশি হলে শেষের ১০টি দেখাবে
       const limitedRows = matchingRows.slice(-10);
 
       const reportBlocks = limitedRows.map(greyRow => {
         const sill = normalizeSill(greyRow[1]);
         const lotNo = normalizeSill(greyRow[4]);
+        const party = greyRow[2] || "N/A";
+        const quality = greyRow[3] || "N/A";
         const lotQty = parseFloat(greyRow[5]?.replace(/,/g, "")) || 0;
         
         const sumSill = (s) => db[s].slice(1).reduce((t, r) => 
           normalizeSill(r[1]) === sill ? t + (parseFloat(r[6]?.replace(/,/g, "")) || 0) : t, 0
         );
 
-        const dyeingTotal = sumSill('cpb') + sumSill('jigger') + sumSill('ex_jigger') + sumSill('napthol');
+        const s = sumSill('singing');
+        const m = sumSill('marcerise');
+        const b = sumSill('bleach');
+        const c = sumSill('cpb');
+        const j = sumSill('jigger');
+        const ex = sumSill('ex_jigger');
+        const n = sumSill('napthol');
+        const f = sumSill('folding');
+
+        const dyeingTotal = c + j + ex + n;
         const diff = lotQty - dyeingTotal;
         
         totalLotSize += lotQty;
         totalDyeingSize += dyeingTotal;
 
-        return `🔹 **Sill: ${sill}** (Lot: ${lotNo})\n👤 Party: ${greyRow[2]}\n📦 Lot: ${lotQty.toLocaleString()} | 🎨 Dye: ${dyeingTotal.toLocaleString()}\n🧺 Fold: ${sumSill('folding').toLocaleString()} | ⚠️ ${diff <= 0 ? "Extra" : "Short"}: ${Math.abs(diff).toLocaleString()}`;
+        return `🆔 **Sill No: ${sill}** (Lot: ${lotNo})
+━━━━━━━━━━━━━━━━━━━━━━━━
+👤 **Party** : ${party}
+📄 **Quality** : ${quality}
+📦 **Lot Size** : ${lotQty.toLocaleString()} yds
+
+⚙️ **Pre-Process Section:**
+• Singing    : ${s.toLocaleString()} yds
+• Mercerize  : ${m.toLocaleString()} yds
+• Bleaching  : ${b.toLocaleString()} yds
+
+🎨 **Dyeing Section:**
+• CPB        : ${c.toLocaleString()} yds
+• Jigger     : ${j.toLocaleString()} yds
+• Ex-Jigger  : ${ex.toLocaleString()} yds
+• Napthol    : ${n.toLocaleString()} yds
+
+🧺 **Finishing:**
+• Folding    : ${f.toLocaleString()} yds
+📍 **Total Dyeing: ${dyeingTotal.toLocaleString()} yds**
+⚠️ **Status: ${diff <= 0 ? "🟢 EXTRA" : "🔴 SHORT"} (${Math.abs(diff).toLocaleString()} yds)**`;
       });
 
-      let finalReply = `🤖 📊 **REPORT: ${inputNumber}**\n━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      finalReply += reportBlocks.join("\n\n");
+      let finalReply = `🤖 📊 **DETAILED PRODUCTION REPORT: ${inputNumber}**\n\n`;
+      finalReply += reportBlocks.join("\n\n---\n\n");
       
       if (matchingRows.length > 1) {
-        finalReply += `\n━━━━━━━━━━━━━━━━━━━━━━━\n✅ **TOTAL (${matchingRows.length} Sills)**\n📦 Lot: ${totalLotSize.toLocaleString()} | 🎨 Dye: ${totalDyeingSize.toLocaleString()}`;
-        if (matchingRows.length > 10) finalReply += `\n(Showing last 10 items)`;
+        finalReply += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━
+✅ **OVERALL SUMMARY (${matchingRows.length} Sills)**
+📦 **Total Lot    :** ${totalLotSize.toLocaleString()} yds
+🎨 **Total Dyeing :** ${totalDyeingSize.toLocaleString()} yds
+━━━━━━━━━━━━━━━━━━━━━━━━`;
       }
 
       return res.json({ reply: finalReply });
     }
   }
+
 
 // --- PARTY + PROCESS SEARCH (noor cpb) ---
   const partyProcessMatch = question.match(/^([a-z0-9 .&_()-]+)[-\s](cpb|jigger|exjigger|ex-jigger|napthol|singing|marcerise|bleach|folding)$/i);
