@@ -4,7 +4,9 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+app.listen(PORT, () => {
+  console.log("Server started on " + PORT);
+});
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -631,10 +633,4 @@ TOTAL : ${total.toLocaleString()} yds
     reply: "Command not recognized. Type help."
   });
 
-});   // ← এইটাই একমাত্র ROUTE CLOSE
-
-const PORT = 3000;
-
-app.listen(PORT, () => {
-  console.log("Server started on " + PORT);
 });
