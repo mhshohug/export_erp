@@ -1,180 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>34" Factory ERP AI</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory ERP AI</title>
 
 <style>
 :root{
-  --bg:#0f172a;
-  --card:#1e293b;
-  --user-msg:#2563eb;
-  --bot-msg:#334155;
-  --accent:#22c55e;
+ --bg:#0f172a;
+ --card:#1e293b;
+ --user:#2563eb;
+ --bot:#334155;
+ --accent:#22c55e;
 }
 
-/* ===== GLOBAL / MOBILE FIX ===== */
+/* ===== BODY ===== */
 body{
-  margin:0;
-  font-family:'Segoe UI',Tahoma,Verdana,sans-serif;
-  background:var(--bg);
-  color:#f8fafc;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-  height:100dvh; /* WebView keyboard fix */
-  overflow:hidden;
+ margin:0;
+ font-family:Segoe UI,Tahoma,Verdana;
+ background:var(--bg);
+ color:#fff;
+ height:100vh;
+ height:100dvh;
+ overflow:hidden;
+ display:flex;
+ flex-direction:column;
 }
 
-/* ===== HEADER (ALWAYS ON TOP) ===== */
+/* ===== FIXED HEADER ===== */
 header{
-  position:fixed;          /* 🔥 always visible */
-  top:0;
-  left:0;
-  width:100%;
-  background:var(--card);
-  padding:15px;
-  text-align:center;
-  font-weight:bold;
-  font-size:20px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.35);
-  z-index:10000;
+ position:fixed;
+ top:0;
+ left:0;
+ width:100%;
+ background:var(--card);
+ padding:15px;
+ text-align:center;
+ font-weight:bold;
+ font-size:20px;
+ z-index:9999;
+ box-shadow:0 3px 10px rgba(0,0,0,.4);
 }
 
-/* ===== CHAT AREA ===== */
+/* ===== CHAT ===== */
 #chat{
-  flex:1;
-  margin-top:65px;         /* header space */
-  overflow-y:auto;
-  padding:15px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  padding-bottom:140px;    /* footer + keyboard */
-  scroll-behavior:smooth;
+ margin-top:70px;
+ flex:1;
+ overflow-y:auto;
+ padding:15px;
+ padding-bottom:140px;
+ display:flex;
+ flex-direction:column;
+ gap:12px;
 }
 
 .msg{
-  max-width:85%;
-  padding:12px 16px;
-  border-radius:18px;
-  white-space:pre-wrap;
-  line-height:1.5;
-  font-size:15px;
-  word-wrap:break-word;
-  box-shadow:0 2px 5px rgba(0,0,0,0.15);
+ max-width:85%;
+ padding:12px 16px;
+ border-radius:18px;
+ white-space:pre-wrap;
+ font-size:15px;
 }
 
 .user{
-  align-self:flex-end;
-  background:var(--user-msg);
-  color:white;
-  border-bottom-right-radius:2px;
+ align-self:flex-end;
+ background:var(--user);
 }
 
 .bot{
-  align-self:flex-start;
-  background:var(--bot-msg);
-  color:#e2e8f0;
-  border-bottom-left-radius:2px;
-  border:1px solid #475569;
+ align-self:flex-start;
+ background:var(--bot);
+ border:1px solid #475569;
 }
 
-/* ===== FOOTER INPUT ===== */
+/* ===== FOOTER ===== */
 footer{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  display:flex;
-  align-items:center;
-  padding:12px 15px;
-  background:var(--card);
-  box-sizing:border-box;
-  gap:10px;
-  border-top:1px solid #334155;
-  z-index:9000;
+ position:fixed;
+ bottom:0;
+ left:0;
+ width:100%;
+ background:var(--card);
+ padding:12px 15px;
+ display:flex;
+ gap:10px;
+ z-index:9999;
 }
 
 input{
-  flex:1;
-  padding:14px;
-  border:1px solid #334155;
-  border-radius:25px;
-  font-size:16px;
-  background:#0f172a;
-  color:white;
-  outline:none;
-}
-
-input:focus{
-  border-color:var(--user-msg);
+ flex:1;
+ padding:14px;
+ border-radius:25px;
+ border:1px solid #334155;
+ background:#0f172a;
+ color:white;
+ font-size:16px;
+ outline:none;
 }
 
 button{
-  padding:12px 20px;
-  border:none;
-  border-radius:25px;
-  background:var(--accent);
-  color:#000;
-  font-weight:bold;
-  cursor:pointer;
-  transition:transform 0.2s;
+ padding:12px 20px;
+ border:none;
+ border-radius:25px;
+ background:var(--accent);
+ font-weight:bold;
+ cursor:pointer;
 }
 
-button:active{
-  transform:scale(0.95);
-}
-
-/* ===== SCROLLBAR ===== */
-#chat::-webkit-scrollbar{width:5px;}
-#chat::-webkit-scrollbar-thumb{
-  background:#334155;
-  border-radius:10px;
-}
-
-/* ===== LEVEL-3 SMART SUGGEST ===== */
+/* ===== SUGGESTIONS (APP SAFE) ===== */
 #suggestions{
-  position:fixed;          /* 🔥 WebView safe */
-  bottom:85px;             /* above keyboard + footer */
-  left:15px;
-  right:15px;
-  background:#1e293b;
-  border:1px solid #334155;
-  border-radius:12px;
-  max-height:260px;
-  overflow-y:auto;
-  display:none;
-  z-index:9500;
-  box-shadow:0 12px 28px rgba(0,0,0,0.45);
+ position:fixed;
+ bottom:85px;
+ left:15px;
+ right:15px;
+ background:#1e293b;
+ border:1px solid #334155;
+ border-radius:12px;
+ max-height:250px;
+ overflow-y:auto;
+ display:none;
+ z-index:9998;
 }
 
 .suggest-item{
-  padding:10px 14px;
-  cursor:pointer;
-  border-bottom:1px solid #334155;
+ padding:10px 14px;
+ border-bottom:1px solid #334155;
+ cursor:pointer;
 }
 
 .suggest-item:last-child{
-  border-bottom:none;
+ border-bottom:none;
 }
 
 .suggest-item:hover{
-  background:#334155;
+ background:#334155;
 }
 
 .highlight{
-  color:#22c55e;
-  font-weight:bold;
-}
-
-.badge{
-  float:right;
-  font-size:11px;
-  background:#334155;
-  padding:2px 6px;
-  border-radius:8px;
+ color:#22c55e;
+ font-weight:bold;
 }
 </style>
 </head>
@@ -184,202 +147,137 @@ button:active{
 <header>🏭 34" Factory ERP AI</header>
 
 <div id="chat">
-  <div class="msg bot">
-    ওস্তাদ, সিল নম্বর, তারিখ বা লট সাইজ লিখে প্রোডাকশন রিপোর্ট চেক করুন!
-  </div>
+<div class="msg bot">
+ওস্তাদ, সিল নম্বর, তারিখ বা লট সাইজ লিখে রিপোর্ট দেখুন।
+</div>
 </div>
 
 <footer>
-  <input id="q" placeholder="Type: 656 / 32330 / today" autocomplete="off" />
-  <button onclick="send()">Send</button>
+<input id="q" placeholder="Type: 656 / 32330 / today">
+<button onclick="send()">Send</button>
 </footer>
 
 <div id="suggestions"></div>
 
 <script>
-/* ===============================
-   BASE CHAT (UNCHANGED)
-=============================== */
-const chat = document.getElementById('chat');
-const input = document.getElementById('q');
-const suggestionBox = document.getElementById('suggestions');
 
-function formatText(text){
-  return text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-}
+/* ===== BASE ===== */
+var chat=document.getElementById("chat");
+var input=document.getElementById("q");
+var suggestionBox=document.getElementById("suggestions");
 
 function add(text,type){
-  const d=document.createElement('div');
-  d.className='msg '+type;
-  d.innerHTML=formatText(text);
-  chat.appendChild(d);
-  setTimeout(()=>{ chat.scrollTop=chat.scrollHeight; },100);
+ var d=document.createElement("div");
+ d.className="msg "+type;
+ d.innerHTML=text;
+ chat.appendChild(d);
+ chat.scrollTop=chat.scrollHeight;
 }
 
-/* ===============================
-   LEVEL-3 SMART SUGGEST ENGINE
-=============================== */
+/* ===== MEMORY ===== */
+var memory=JSON.parse(localStorage.getItem("erp_memory")||"[]");
 
-const baseCommands=[
-  "total dyeing","totall","today","today dyeing",
-  "cpb per day","jigger per day","ex-jigger per day",
-  "napthol per day","singing per day",
-  "marcerise per day","bleach per day","folding per day"
+function saveMemory(t){
+ memory.unshift(t);
+ memory=memory.filter(function(v,i,a){return a.indexOf(v)===i}).slice(0,10);
+ localStorage.setItem("erp_memory",JSON.stringify(memory));
+}
+
+/* ===== STATIC COMMANDS ===== */
+var baseCommands=[
+"total dyeing","totall","today",
+"cpb per day","jigger per day",
+"napthol per day","singing per day",
+"marcerise per day","bleach per day"
 ];
 
-const processes=[
-  "cpb","jigger","ex-jigger","napthol",
-  "singing","marcerise","bleach","folding"
-];
+/* ===== RENDER SUGGEST ===== */
+function renderSuggest(list,value){
+ suggestionBox.innerHTML="";
+ if(list.length===0){
+  suggestionBox.style.display="none";
+  return;
+ }
 
-const months=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
-
-/* Memory */
-let memory = JSON.parse(localStorage.getItem("erp_memory") || "[]");
-
-function saveMemory(text){
-  memory.unshift(text);
-  memory=[...new Set(memory)].slice(0,10);
-  localStorage.setItem("erp_memory",JSON.stringify(memory));
+ for(var i=0;i<list.length;i++){
+  var div=document.createElement("div");
+  div.className="suggest-item";
+  div.innerHTML=list[i];
+  div.onclick=function(){
+   input.value=this.innerText;
+   suggestionBox.style.display="none";
+   input.focus();
+  };
+  suggestionBox.appendChild(div);
+ }
+ suggestionBox.style.display="block";
 }
 
-function highlightText(text,value){
-  if(!value) return text;
-  const r=new RegExp(`(${value})`,"gi");
-  return text.replace(r,'<span class="highlight">$1</span>');
-}
+/* ===== SUGGEST ENGINE (NO ASYNC) ===== */
+input.addEventListener("input",function(){
 
-/* Date prediction */
-function datePredict(value){
-  let out=[];
-  const d=new Date();
-  const m=months[d.getMonth()];
-  if(/^\d{1,2}$/.test(value)){
-    out.push(`${value} ${m}`);
-    processes.forEach(p=>{
-      out.push(`${value} ${m} ${p}`);
-      out.push(`${value} ${m} dyeing`);
-    });
+ var value=this.value.toLowerCase().trim();
+ if(value===""){
+  suggestionBox.style.display="none";
+  return;
+ }
+
+ var list=[];
+
+ /* Base */
+ for(var i=0;i<baseCommands.length;i++){
+  if(baseCommands[i].indexOf(value)!==-1){
+   list.push(baseCommands[i]);
   }
-  return out;
-}
+ }
 
-/* Fetch party list (backend support required) */
-async function fetchParties(){
-  try{
-    const r=await fetch('/ask',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({question:"__party_list__"})
-    });
-    const j=await r.json();
-    return j.parties || [];
-  }catch{
-    return [];
+ /* Memory */
+ for(var j=0;j<memory.length;j++){
+  if(memory[j].toLowerCase().indexOf(value)!==-1){
+   list.push(memory[j]);
   }
-}
+ }
 
-/* Suggest handler */
-input.addEventListener("input", async function(){
-  const value=this.value.toLowerCase().trim();
-  suggestionBox.innerHTML="";
+ /* Sill detect */
+ if(/^\d{3,}$/.test(value)){
+  list.push("Search Sill "+value);
+  list.push("Search Lot "+value);
+ }
 
-  if(!value){
-    suggestionBox.style.display="none";
-    return;
-  }
+ list=list.filter(function(v,i,a){return a.indexOf(v)===i}).slice(0,8);
 
-  let list=[];
+ renderSuggest(list,value);
 
-  /* base */
-  list.push(...baseCommands.filter(c=>c.includes(value)));
-
-  /* date */
-  list.push(...datePredict(value));
-
-  /* process */
-  processes.forEach(p=>{
-    if(p.includes(value)) list.push(p+" per day");
-  });
-
-  /* sill / lot */
-  if(/^\d{3,}$/.test(value)){
-    list.push("Search Sill: "+value);
-    list.push("Search Lot: "+value);
-  }
-
-  /* memory */
-  memory.forEach(m=>{
-    if(m.toLowerCase().includes(value)) list.push(m);
-  });
-
-  /* live party */
-  if(value.length>=2){
-    const parties=await fetchParties();
-    parties.forEach(p=>{
-      if(p.toLowerCase().includes(value))
-        list.push(p+" <span class='badge'>Party</span>");
-    });
-  }
-
-  list=[...new Set(list)].slice(0,12);
-
-  if(list.length===0){
-    suggestionBox.style.display="none";
-    return;
-  }
-
-  list.forEach(cmd=>{
-    const d=document.createElement("div");
-    d.className="suggest-item";
-    d.innerHTML=highlightText(cmd,value);
-    d.onclick=()=>{
-      input.value=cmd
-        .replace("Search Sill: ","")
-        .replace("Search Lot: ","")
-        .replace(/ <.*?>/g,"");
-      suggestionBox.style.display="none";
-      input.focus();
-    };
-    suggestionBox.appendChild(d);
-  });
-
-  suggestionBox.style.display="block";
 });
 
-document.addEventListener("click",e=>{
-  if(!e.target.closest("#q")){
-    suggestionBox.style.display="none";
-  }
-});
+/* ===== SEND ===== */
+function send(){
+ var text=input.value.trim();
+ if(text==="") return;
 
-/* ===============================
-   SEND (UNCHANGED LOGIC)
-=============================== */
-async function send(){
-  const text=input.value.trim();
-  if(!text) return;
+ add(text,"user");
+ saveMemory(text);
+ input.value="";
+ suggestionBox.style.display="none";
 
-  add(text,'user');
-  saveMemory(text);
-  input.value='';
-
-  try{
-    const r=await fetch('/ask',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({question:text})
-    });
-    const j=await r.json();
-    add(j.reply,'bot');
-  }catch{
-    add('⚠️ সার্ভার কানেকশন এরর!','bot');
-  }
+ fetch("/ask",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({question:text})
+ })
+ .then(function(res){return res.json();})
+ .then(function(data){
+  add(data.reply,"bot");
+ })
+ .catch(function(){
+  add("⚠️ Server Error","bot");
+ });
 }
 
-input.addEventListener('keypress',e=>{
-  if(e.key==='Enter') send();
+input.addEventListener("keypress",function(e){
+ if(e.key==="Enter") send();
 });
+
 </script>
 
 </body>
