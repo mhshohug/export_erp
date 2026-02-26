@@ -401,6 +401,29 @@ Folding     : ${data.folding.toLocaleString()}
 function formatDateReport(data) {
 
   return `
+  // TOTAL DYEING ONLY
+if (cleanInput === "totaldyeing" || cleanInput === "total dyeing") {
+
+  const c = getProcessSum("cpb");
+  const j = getProcessSum("jigger");
+  const ex = getProcessSum("ex_jigger");
+  const n = getProcessSum("napthol");
+
+  return res.json({
+    reply: `
+🎨 ═══════════════════════════
+        TOTAL DYEING SUMMARY
+═══════════════════════════
+CPB        : ${c.toLocaleString()}
+Jigger     : ${j.toLocaleString()}
+Ex-Jigger  : ${ex.toLocaleString()}
+Napthol    : ${n.toLocaleString()}
+═══════════════════════════
+TOTAL      : ${(c+j+ex+n).toLocaleString()} yds
+═══════════════════════════
+`
+  });
+}
 📅 ═══════════════════════════
         DAILY PRODUCTION REPORT
 ═══════════════════════════
@@ -525,7 +548,64 @@ if (cleanInput === "totall") {
   });
 }
 
-// DATE BASED
+// DATE + PROCESS DETAILED
+const dateObj = getKeywordDate(question);
+const procMatch = question.match(/(cpb|jigger|exjigger|ex-jigger|napthol|singing|marcerise|bleach|folding)/);
+
+if (dateObj && procMatch) {
+
+  const proc = procMatch[1]
+    .replace("exjigger","ex_jigger")
+    .replace("ex-jigger","ex_jigger");
+
+  const rows = db[proc].slice(1).filter(row => {
+    const rowDate = parseSheetDate(row[0]);
+    return rowDate && sameDate(rowDate, dateObj);
+  });
+
+  if (rows.length === 0)
+    return res.json({ reply: "এই দিনে production হয়নি।" });
+
+  const combined = {};
+
+  rows.forEach(row => {
+
+    const sill = normalizeSill(row[1]);
+    const qty = safeNumber(row[6]);
+
+    if (!combined[sill]) {
+
+      const greyRow = db.grey.slice(1)
+        .find(g => normalizeSill(g[1]) === sill);
+
+      combined[sill] = {
+        party: greyRow?.[2] || "N/A",
+        qty: 0
+      };
+    }
+
+    combined[sill].qty += qty;
+  });
+
+  const list = Object.entries(combined)
+    .map(([sill, data]) =>
+      `🆔 ${sill} | ${data.party} → ${data.qty.toLocaleString()} yds`
+    ).join("\n");
+
+  const total = rows.reduce((t,r)=> t + safeNumber(r[6]), 0);
+
+  return res.json({
+    reply: `
+📅 ${dateObj.toDateString()}
+⚙ PROCESS: ${proc.toUpperCase()}
+───────────────────────────
+${list}
+───────────────────────────
+TOTAL : ${total.toLocaleString()} yds
+`
+  });
+}
+   // DATE BASED
 const keywordDate = getKeywordDate(question);
 if (keywordDate) {
 
@@ -544,6 +624,51 @@ if (numMatch) {
     return res.json({ reply: formatSillReport(reports) });
 }
 
+   // PARTY + PROCESS
+const partyProcessMatch = question.match(/^(.+)\s+(cpb|jigger|exjigger|ex-jigger|napthol|singing|marcerise|bleach|folding)$/);
+
+if (partyProcessMatch) {
+
+  const partyName = partyProcessMatch[1].trim();
+  const proc = partyProcessMatch[2]
+    .replace("exjigger","ex_jigger")
+    .replace("ex-jigger","ex_jigger");
+
+  const greyRows = db.grey.slice(1).filter(row =>
+    row[2] && row[2].toLowerCase().includes(partyName)
+  );
+
+  if (greyRows.length === 0)
+    return res.json({ reply: "Party পাওয়া যায়নি।" });
+
+  let total = 0;
+  let lines = [];
+
+  greyRows.forEach(row => {
+
+    const sill = normalizeSill(row[1]);
+
+    const qty = db[proc].slice(1).reduce((t,r)=>
+      normalizeSill(r[1]) === sill ? t + safeNumber(r[6]) : t
+    ,0);
+
+    if (qty > 0) {
+      total += qty;
+      lines.push(`🆔 ${sill} → ${qty.toLocaleString()} yds`);
+    }
+  });
+
+  return res.json({
+    reply: `
+👤 Party: ${partyName.toUpperCase()}
+⚙ Process: ${proc.toUpperCase()}
+───────────────────────────
+${lines.join("\n")}
+───────────────────────────
+TOTAL: ${total.toLocaleString()} yds
+`
+  });
+}
 // PARTY SEARCH
 const partyReports = getPartyFullSummary(question);
 if (partyReports)
