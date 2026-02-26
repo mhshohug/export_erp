@@ -636,17 +636,15 @@ TOTAL : ${total.toLocaleString()} yds
 /* =========================================================
    PART 4 – ROUTE CLOSE + SERVER START
 ========================================================= */
-
 return res.json({
-  reply:"Command not recognized. Type help."
-});
+    reply: "Command not recognized. Type help."
+  });
 
-});   // ROUTE CLOSE (ONLY ONE TIME)
+});   // ROUTE CLOSE
 
-/* ===================== SERVER START ===================== */
 
 const PORT = 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server started on ${PORT}`);
+  console.log("Server started on " + PORT);
 });
