@@ -144,16 +144,21 @@ Type any command to continue 🚀`
     let grandTotal = 0;
 
     for (let d = 1; d <= today.getDate(); d++) {
+const qty = db[proc].slice(1).reduce((total,row)=>{
 
-      const searchDate = `${d}-${monthName}`;
+  const rawDate = row[0];
+  const dObj = new Date(rawDate);
 
-      const qty = db[proc].slice(1).reduce((total,row)=>{
-        const rowDate = cleanDate(row[0]);
-        if(rowDate.includes(cleanDate(searchDate)))
-          return total + safeNum(row[6]);
-        return total;
-      },0);
+  if (!isNaN(dObj)) {
+    if (dObj.getDate() === d && dObj.getMonth() === month) {
+      return total + safeNum(row[6]);
+    }
+  }
 
+  return total;
+
+},0);
+      
       grandTotal += qty;
       report.push(`${searchDate} : ${qty.toLocaleString()} yds`);
     }
