@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,20 +14,19 @@
  --accent:#22c55e;
 }
 
-/* ===== BODY ===== */
 body{
  margin:0;
- font-family:Segoe UI,Tahoma,Verdana;
+ font-family:Segoe UI;
  background:var(--bg);
- color:#fff;
+ color:white;
  height:100vh;
  height:100dvh;
- overflow:hidden;
  display:flex;
  flex-direction:column;
+ overflow:hidden;
 }
 
-/* ===== FIXED HEADER ===== */
+/* ===== HEADER FIXED ===== */
 header{
  position:fixed;
  top:0;
@@ -38,8 +37,7 @@ header{
  text-align:center;
  font-weight:bold;
  font-size:20px;
- z-index:9999;
- box-shadow:0 3px 10px rgba(0,0,0,.4);
+ z-index:1000;
 }
 
 /* ===== CHAT ===== */
@@ -48,18 +46,16 @@ header{
  flex:1;
  overflow-y:auto;
  padding:15px;
- padding-bottom:140px;
+ padding-bottom:160px;
  display:flex;
  flex-direction:column;
- gap:12px;
+ gap:10px;
 }
 
 .msg{
- max-width:85%;
- padding:12px 16px;
+ max-width:80%;
+ padding:10px 15px;
  border-radius:18px;
- white-space:pre-wrap;
- font-size:15px;
 }
 
 .user{
@@ -73,56 +69,23 @@ header{
  border:1px solid #475569;
 }
 
-/* ===== FOOTER ===== */
-footer{
- position:fixed;
- bottom:0;
- left:0;
- width:100%;
- background:var(--card);
- padding:12px 15px;
- display:flex;
- gap:10px;
- z-index:9999;
-}
-
-input{
- flex:1;
- padding:14px;
- border-radius:25px;
- border:1px solid #334155;
- background:#0f172a;
- color:white;
- font-size:16px;
- outline:none;
-}
-
-button{
- padding:12px 20px;
- border:none;
- border-radius:25px;
- background:var(--accent);
- font-weight:bold;
- cursor:pointer;
-}
-
-/* ===== SUGGESTIONS (APP SAFE) ===== */
+/* ===== SUGGESTIONS FLOAT ===== */
 #suggestions{
  position:fixed;
- bottom:85px;
+ bottom:80px; /* টাইপবক্সের উপরে */
  left:15px;
  right:15px;
  background:#1e293b;
- border:1px solid #334155;
  border-radius:12px;
- max-height:250px;
- overflow-y:auto;
+ border:1px solid #334155;
  display:none;
- z-index:9998;
+ max-height:200px;
+ overflow-y:auto;
+ z-index:999;
 }
 
 .suggest-item{
- padding:10px 14px;
+ padding:10px;
  border-bottom:1px solid #334155;
  cursor:pointer;
 }
@@ -135,9 +98,55 @@ button{
  background:#334155;
 }
 
-.highlight{
- color:#22c55e;
+/* ===== QUICK COMMAND BAR ===== */
+#quickBar{
+ position:fixed;
+ bottom:60px;
+ left:0;
+ width:100%;
+ overflow-x:auto;
+ white-space:nowrap;
+ padding:5px 10px;
+}
+
+.quick-btn{
+ display:inline-block;
+ background:#1e293b;
+ padding:6px 12px;
+ border-radius:20px;
+ margin-right:8px;
+ font-size:14px;
+ cursor:pointer;
+}
+
+/* ===== FOOTER ===== */
+footer{
+ position:fixed;
+ bottom:0;
+ left:0;
+ width:100%;
+ background:var(--card);
+ padding:10px;
+ display:flex;
+ gap:10px;
+}
+
+input{
+ flex:1;
+ padding:12px;
+ border-radius:25px;
+ border:none;
+ outline:none;
+ font-size:16px;
+}
+
+button{
+ padding:10px 18px;
+ border:none;
+ border-radius:25px;
+ background:var(--accent);
  font-weight:bold;
+ cursor:pointer;
 }
 </style>
 </head>
@@ -148,24 +157,40 @@ button{
 
 <div id="chat">
 <div class="msg bot">
-ওস্তাদ, সিল নম্বর, তারিখ বা লট সাইজ লিখে রিপোর্ট দেখুন।
+ওস্তাদ, সিল নম্বর বা কমান্ড লিখুন।
 </div>
+</div>
+
+<!-- Suggest Box -->
+<div id="suggestions"></div>
+
+<!-- Quick Command Bar -->
+<div id="quickBar">
+<span class="quick-btn" onclick="quick('total dyeing')">total dyeing</span>
+<span class="quick-btn" onclick="quick('today')">today</span>
+<span class="quick-btn" onclick="quick('cpb per day')">cpb per day</span>
+<span class="quick-btn" onclick="quick('jigger per day')">jigger per day</span>
+<span class="quick-btn" onclick="quick('sill 590')">sill 590</span>
 </div>
 
 <footer>
-<input id="q" placeholder="Type: 656 / 32330 / today">
+<input id="q" placeholder="Type command...">
 <button onclick="send()">Send</button>
 </footer>
 
-<div id="suggestions"></div>
-
 <script>
-
-/* ===== BASE ===== */
 var chat=document.getElementById("chat");
 var input=document.getElementById("q");
-var suggestionBox=document.getElementById("suggestions");
+var suggestions=document.getElementById("suggestions");
 
+var commands=[
+"total dyeing","totall","today",
+"cpb per day","jigger per day",
+"napthol per day","singing per day",
+"marcerise per day","bleach per day"
+];
+
+/* ===== ADD MESSAGE ===== */
 function add(text,type){
  var d=document.createElement("div");
  d.className="msg "+type;
@@ -174,91 +199,14 @@ function add(text,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-/* ===== MEMORY ===== */
-var memory=JSON.parse(localStorage.getItem("erp_memory")||"[]");
-
-function saveMemory(t){
- memory.unshift(t);
- memory=memory.filter(function(v,i,a){return a.indexOf(v)===i}).slice(0,10);
- localStorage.setItem("erp_memory",JSON.stringify(memory));
-}
-
-/* ===== STATIC COMMANDS ===== */
-var baseCommands=[
-"total dyeing","totall","today",
-"cpb per day","jigger per day",
-"napthol per day","singing per day",
-"marcerise per day","bleach per day"
-];
-
-/* ===== RENDER SUGGEST ===== */
-function renderSuggest(list,value){
- suggestionBox.innerHTML="";
- if(list.length===0){
-  suggestionBox.style.display="none";
-  return;
- }
-
- for(var i=0;i<list.length;i++){
-  var div=document.createElement("div");
-  div.className="suggest-item";
-  div.innerHTML=list[i];
-  div.onclick=function(){
-   input.value=this.innerText;
-   suggestionBox.style.display="none";
-   input.focus();
-  };
-  suggestionBox.appendChild(div);
- }
- suggestionBox.style.display="block";
-}
-
-/* ===== SUGGEST ENGINE (NO ASYNC) ===== */
-input.addEventListener("input",function(){
-
- var value=this.value.toLowerCase().trim();
- if(value===""){
-  suggestionBox.style.display="none";
-  return;
- }
-
- var list=[];
-
- /* Base */
- for(var i=0;i<baseCommands.length;i++){
-  if(baseCommands[i].indexOf(value)!==-1){
-   list.push(baseCommands[i]);
-  }
- }
-
- /* Memory */
- for(var j=0;j<memory.length;j++){
-  if(memory[j].toLowerCase().indexOf(value)!==-1){
-   list.push(memory[j]);
-  }
- }
-
- /* Sill detect */
- if(/^\d{3,}$/.test(value)){
-  list.push("Search Sill "+value);
-  list.push("Search Lot "+value);
- }
-
- list=list.filter(function(v,i,a){return a.indexOf(v)===i}).slice(0,8);
-
- renderSuggest(list,value);
-
-});
-
 /* ===== SEND ===== */
 function send(){
  var text=input.value.trim();
  if(text==="") return;
 
  add(text,"user");
- saveMemory(text);
  input.value="";
- suggestionBox.style.display="none";
+ suggestions.style.display="none";
 
  fetch("/ask",{
   method:"POST",
@@ -270,14 +218,52 @@ function send(){
   add(data.reply,"bot");
  })
  .catch(function(){
-  add("⚠️ Server Error","bot");
+  add("Server error","bot");
  });
 }
 
-input.addEventListener("keypress",function(e){
- if(e.key==="Enter") send();
-});
+/* ===== QUICK BUTTON ===== */
+function quick(t){
+ input.value=t;
+ send();
+}
 
+/* ===== SIMPLE SUGGEST ===== */
+input.addEventListener("input",function(){
+ var value=this.value.toLowerCase();
+ suggestions.innerHTML="";
+
+ if(value===""){
+  suggestions.style.display="none";
+  return;
+ }
+
+ var list=[];
+ for(var i=0;i<commands.length;i++){
+  if(commands[i].indexOf(value)!==-1){
+   list.push(commands[i]);
+  }
+ }
+
+ if(list.length===0){
+  suggestions.style.display="none";
+  return;
+ }
+
+ for(var j=0;j<list.length;j++){
+  var div=document.createElement("div");
+  div.className="suggest-item";
+  div.innerText=list[j];
+  div.onclick=function(){
+   input.value=this.innerText;
+   suggestions.style.display="none";
+   input.focus();
+  };
+  suggestions.appendChild(div);
+ }
+
+ suggestions.style.display="block";
+});
 </script>
 
 </body>
