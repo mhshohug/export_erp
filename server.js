@@ -623,25 +623,15 @@ TOTAL : ${total.toLocaleString()} yds
 
   /* ===================== PARTY SUMMARY ===================== */
 
-  const partyData=getPartyFullSummary(db,question);
-  if(partyData)
-    return res.json({reply:formatPartySummary(partyData)});
-
+  const partyData = getPartyFullSummary(db, question);
+  if (partyData)
+    return res.json({ reply: formatPartySummary(partyData) });
 
   return res.json({
-    reply:"Command not recognized. Type help."
-  });
-
-});
-/* =========================================================
-   PART 4 – ROUTE CLOSE + SERVER START
-========================================================= */
-return res.json({
     reply: "Command not recognized. Type help."
   });
 
-});   // ROUTE CLOSE
-
+});   // ← এইটাই একমাত্র ROUTE CLOSE
 
 const PORT = 3000;
 
