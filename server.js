@@ -637,14 +637,11 @@ TOTAL : ${total.toLocaleString()} yds
    PART 4 – ROUTE CLOSE + SERVER START
 ========================================================= */
 
-/* ===================== FALLBACK ===================== */
-
 return res.json({
-  reply: "Command বুঝতে পারিনি। help লিখে দেখো।"
+  reply:"Command not recognized. Type help."
 });
 
-}); // ROUTE CLOSE
-
+});   // ROUTE CLOSE (ONLY ONE TIME)
 
 /* ===================== SERVER START ===================== */
 
