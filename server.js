@@ -1,6 +1,6 @@
 /* =========================================================
-   FACTORY ERP AI – FULL ADVANCED VERSION
-   PART 1 – CORE ENGINE
+   🏭 FACTORY ERP AI – ENTERPRISE EDITION
+   PART 1 – CORE ENGINE + SAFE UTILITIES
 ========================================================= */
 
 const express = require("express");
@@ -14,9 +14,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const SHEET_ID = "17AlSp8QqY3_YmW9bb1W-fMg9m7FFBxtYKXc2Cr9fq3A";
+/* ===================== GOOGLE SHEET CONFIG ===================== */
 
-/* ===================== SHEET MAP ===================== */
+const SHEET_ID = "17AlSp8QqY3_YmW9bb1W-fMg9m7FFBxtYKXc2Cr9fq3A";
 
 const GID_MAP = {
   grey: "1069156463",
@@ -32,7 +32,7 @@ const GID_MAP = {
 
 /* ===================== SAFE UTILITIES ===================== */
 
-function safeNum(val) {
+function safeNumber(val) {
   if (!val) return 0;
   return parseFloat(val.toString().replace(/,/g, "").trim()) || 0;
 }
@@ -42,23 +42,26 @@ function normalizeSill(val) {
   return val.toString().replace(/[^0-9]/g, "");
 }
 
-function parseDate(raw) {
+/* ===================== DATE ENGINE ===================== */
+
+function parseSheetDate(raw) {
   if (!raw) return null;
+
   const d = new Date(raw);
-  if (isNaN(d.getTime())) return null;
-  return d;
+  if (!isNaN(d.getTime())) return d;
+
+  return null;
 }
 
 function sameDate(d1, d2) {
   if (!d1 || !d2) return false;
+
   return (
     d1.getDate() === d2.getDate() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getFullYear() === d2.getFullYear()
   );
 }
-
-/* ===================== DATE KEYWORD ENGINE ===================== */
 
 function getKeywordDate(input) {
   const today = new Date();
@@ -67,7 +70,7 @@ function getKeywordDate(input) {
 
   const lower = input.toLowerCase();
 
-  if (lower.includes("today") || lower.includes("ajke") || lower.includes("aj"))
+  if (lower.includes("today") || lower.includes("aj") || lower.includes("ajke"))
     return today;
 
   if (lower.includes("yesterday") || lower.includes("kal"))
@@ -83,7 +86,7 @@ function getKeywordDate(input) {
 
     const day = parseInt(match[1]);
     const month = months[match[2]];
-    const year = new Date().getFullYear();
+    const year = today.getFullYear();
 
     return new Date(year, month, day);
   }
@@ -102,6 +105,7 @@ async function fetchSheet(gid) {
       line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
           .map(cell => cell.replace(/^"|"$/g, "").trim())
     );
+
   } catch (err) {
     console.log("Sheet Load Error:", err.message);
     return [];
@@ -126,373 +130,424 @@ app.post("/ask", async (req, res) => {
   keys.forEach((k, i) => db[k] = results[i]);
 
 /* =========================================================
-   PART 1 END
-   (DO NOT CLOSE ROUTE YET)
+   PART 1 END – ROUTE STILL OPEN
+   DO NOT CLOSE ROUTE
 ========================================================= */
          /* =========================================================
-   PART 2 – FULL COMMAND ENGINE
+   PART 2 – CALCULATION ENGINE
 ========================================================= */
 
-/* ===================== CORE SUM ENGINE ===================== */
+/* ===================== UNIVERSAL SUM ===================== */
 
-const getSum = (sheet, targetDate = null) => {
-  const rows = db[sheet].slice(1);
+function getProcessSum(sheetName, targetDate = null) {
+
+  const rows = db[sheetName].slice(1);
 
   return rows.reduce((total, row) => {
 
     if (!targetDate)
-      return total + safeNum(row[6]);
+      return total + safeNumber(row[6]);
 
-    const rowDate = parseDate(row[0]);
+    const rowDate = parseSheetDate(row[0]);
     if (!rowDate) return total;
 
     if (sameDate(rowDate, targetDate))
-      return total + safeNum(row[6]);
+      return total + safeNumber(row[6]);
 
     return total;
 
   }, 0);
-};
-
-/* ===================== HELP ===================== */
-
-if (cleanInput === "help") {
-  return res.json({
-    reply:
-`🤖 FACTORY ERP AI – COMMAND LIST
-━━━━━━━━━━━━━━━━━━━━
-📊 cpb per day
-📊 jigger per day
-📊 napthol per day
-📊 ex jigger per day
-
-🎨 total dyeing
-🏭 totall
-
-📅 15 feb
-📅 15 feb dyeing
-📅 15 feb cpb
-📅 today / ajke / kal
-
-🔎 12345 (sill / lot)
-👤 noor
-👤 noor cpb`
-  });
 }
 
-/* ===================== PER DAY ===================== */
+/* ===================== PER DAY ENGINE ===================== */
 
-const perDayMatch = question.match(/(cpb|jigger|ex-jigger|exjigger|napthol|singing|marcerise|bleach|folding)\s*per\s*day/);
-
-if (perDayMatch) {
-
-  let proc = perDayMatch[1]
-    .replace("exjigger","ex_jigger")
-    .replace("ex-jigger","ex_jigger");
-
-  if (!GID_MAP[proc])
-    return res.json({ reply: "Process বুঝতে পারিনি!" });
+function getMonthlyPerDay(sheetName) {
 
   const today = new Date();
   const month = today.getMonth();
   const year = today.getFullYear();
 
-  let report = [];
+  let days = [];
   let grandTotal = 0;
+  let highest = 0;
+  let lowest = null;
 
   for (let d = 1; d <= today.getDate(); d++) {
 
     const target = new Date(year, month, d);
-    const qty = getSum(proc, target);
+    const qty = getProcessSum(sheetName, target);
 
-    grandTotal += qty;
-    report.push(`${d} : ${qty.toLocaleString()} yds`);
-  }
-
-  return res.json({
-    reply:
-`📊 ${proc.toUpperCase()} DAILY PRODUCTION
-━━━━━━━━━━━━━━━━━━━━
-${report.join("\n")}
-━━━━━━━━━━━━━━━━━━━━
-✅ TOTAL: ${grandTotal.toLocaleString()} yds`
-  });
-}
-
-/* ===================== TOTAL DYEING ===================== */
-
-if (cleanInput === "totaldyeing") {
-
-  const c = getSum("cpb");
-  const j = getSum("jigger");
-  const ex = getSum("ex_jigger");
-  const n = getSum("napthol");
-
-  return res.json({
-    reply:
-`🎨 TOTAL DYEING (ALL TIME)
-━━━━━━━━━━━━━━━━━━━━
-CPB: ${c.toLocaleString()}
-JIG: ${j.toLocaleString()}
-EX: ${ex.toLocaleString()}
-NAP: ${n.toLocaleString()}
-━━━━━━━━━━━━━━━━━━━━
-TOTAL: ${(c+j+ex+n).toLocaleString()}`
-  });
-}
-
-/* ===================== FACTORY OVERALL ===================== */
-
-if (cleanInput === "totall") {
-
-  const s = getSum("singing");
-  const m = getSum("marcerise");
-  const b = getSum("bleach");
-  const c = getSum("cpb");
-  const j = getSum("jigger");
-  const ex = getSum("ex_jigger");
-  const n = getSum("napthol");
-  const f = getSum("folding");
-
-  return res.json({
-    reply:
-`🏭 FACTORY SUMMARY
-━━━━━━━━━━━━━━━━━━━━
-Singing: ${s.toLocaleString()}
-Marc: ${m.toLocaleString()}
-Bleach: ${b.toLocaleString()}
-
-CPB: ${c.toLocaleString()}
-JIG: ${j.toLocaleString()}
-EX: ${ex.toLocaleString()}
-NAP: ${n.toLocaleString()}
-
-Folding: ${f.toLocaleString()}`
-  });
-}
-
-/* ===================== DATE BASED ===================== */
-
-const keywordDate = getKeywordDate(question);
-
-if (keywordDate && !question.includes("per day")) {
-
-  const s = getSum("singing", keywordDate);
-  const m = getSum("marcerise", keywordDate);
-  const b = getSum("bleach", keywordDate);
-  const c = getSum("cpb", keywordDate);
-  const j = getSum("jigger", keywordDate);
-  const ex = getSum("ex_jigger", keywordDate);
-  const n = getSum("napthol", keywordDate);
-  const f = getSum("folding", keywordDate);
-
-  if (question.includes("dyeing")) {
-
-    return res.json({
-      reply:
-`📅 DYEING REPORT
-━━━━━━━━━━━━━━━━━━━━
-CPB: ${c.toLocaleString()}
-JIG: ${j.toLocaleString()}
-EX: ${ex.toLocaleString()}
-NAP: ${n.toLocaleString()}
-━━━━━━━━━━━━━━━━━━━━
-TOTAL: ${(c+j+ex+n).toLocaleString()}`
+    days.push({
+      day: d,
+      qty
     });
 
+    grandTotal += qty;
+
+    if (qty > highest) highest = qty;
+    if (lowest === null || qty < lowest) lowest = qty;
   }
 
-  const grand = s+m+b+c+j+ex+n;
-
-  return res.json({
-    reply:
-`📅 DAILY REPORT
-━━━━━━━━━━━━━━━━━━━━
-Singing: ${s.toLocaleString()}
-Marc: ${m.toLocaleString()}
-Bleach: ${b.toLocaleString()}
-
-CPB: ${c.toLocaleString()}
-JIG: ${j.toLocaleString()}
-EX: ${ex.toLocaleString()}
-NAP: ${n.toLocaleString()}
-
-Folding: ${f.toLocaleString()}
-━━━━━━━━━━━━━━━━━━━━
-TOTAL: ${grand.toLocaleString()}`
-  });
+  return {
+    days,
+    total: grandTotal,
+    highest,
+    lowest
+  };
 }
-/* =========================================================
-   PART 3 – ADVANCED SEARCH + SERVER START
-========================================================= */
 
-/* ===================== SILL / LOT SEARCH ===================== */
+/* ===================== FACTORY TOTAL ===================== */
 
-const numMatch = question.match(/(\d{3,})/);
+function getFactoryTotals() {
 
-if (numMatch) {
+  const s = getProcessSum("singing");
+  const m = getProcessSum("marcerise");
+  const b = getProcessSum("bleach");
 
-  const inputNumber = normalizeSill(numMatch[1]);
+  const c = getProcessSum("cpb");
+  const j = getProcessSum("jigger");
+  const ex = getProcessSum("ex_jigger");
+  const n = getProcessSum("napthol");
+
+  const f = getProcessSum("folding");
+
+  return {
+    process: { s, m, b },
+    dyeing: { c, j, ex, n },
+    folding: f,
+    dyeTotal: c + j + ex + n
+  };
+}
+
+/* ===================== DATE WISE REPORT ===================== */
+
+function getDateReport(targetDate) {
+
+  const s = getProcessSum("singing", targetDate);
+  const m = getProcessSum("marcerise", targetDate);
+  const b = getProcessSum("bleach", targetDate);
+
+  const c = getProcessSum("cpb", targetDate);
+  const j = getProcessSum("jigger", targetDate);
+  const ex = getProcessSum("ex_jigger", targetDate);
+  const n = getProcessSum("napthol", targetDate);
+
+  const f = getProcessSum("folding", targetDate);
+
+  return {
+    process: { s, m, b },
+    dyeing: { c, j, ex, n },
+    folding: f,
+    total: s + m + b + c + j + ex + n
+  };
+}
+
+/* ===================== PARTY AGGREGATION ===================== */
+
+function getPartyFullSummary(partyName) {
+
+  const greyRows = db.grey.slice(1).filter(row =>
+    row[2] && row[2].toLowerCase().includes(partyName)
+  );
+
+  if (greyRows.length === 0) return null;
+
+  let reports = [];
+
+  greyRows.slice(-15).forEach(row => {
+
+    const sill = normalizeSill(row[1]);
+    const quality = row[3] || "N/A";
+    const lot = safeNumber(row[5]);
+
+    const sumProc = (proc) =>
+      db[proc].slice(1).reduce((t,r)=>
+        normalizeSill(r[1]) === sill ? t + safeNumber(r[6]) : t
+      ,0);
+
+    const dyeTotal =
+      sumProc("cpb") +
+      sumProc("jigger") +
+      sumProc("ex_jigger") +
+      sumProc("napthol");
+
+    reports.push({
+      party: row[2],
+      sill,
+      quality,
+      lot,
+      dyeTotal
+    });
+  });
+
+  return reports;
+}
+
+/* ===================== SILL FULL REPORT ===================== */
+
+function getSillReport(inputNumber) {
 
   const greyRows = db.grey.slice(1).filter(row =>
     normalizeSill(row[1]) === inputNumber ||
     normalizeSill(row[5]) === inputNumber
   );
 
-  if (greyRows.length > 0) {
+  if (greyRows.length === 0) return null;
 
-    let totalLot = 0;
-    let totalDye = 0;
+  return greyRows.map(row => {
 
-    const blocks = greyRows.slice(-10).map(row => {
+    const sill = normalizeSill(row[1]);
+    const party = row[2] || "N/A";
+    const quality = row[3] || "N/A";
+    const lot = safeNumber(row[5]);
 
-      const sill = normalizeSill(row[1]);
-      const party = row[2] || "N/A";
-      const quality = row[3] || "N/A";
-      const lot = safeNum(row[5]);
+    const sumProc = (proc) =>
+      db[proc].slice(1).reduce((t,r)=>
+        normalizeSill(r[1]) === sill ? t + safeNumber(r[6]) : t
+      ,0);
 
-      const sumProcess = (proc) =>
-        db[proc].slice(1).reduce((t, r) =>
-          normalizeSill(r[1]) === sill ? t + safeNum(r[6]) : t
-        , 0);
+    const s = sumProc("singing");
+    const m = sumProc("marcerise");
+    const b = sumProc("bleach");
+    const c = sumProc("cpb");
+    const j = sumProc("jigger");
+    const ex = sumProc("ex_jigger");
+    const n = sumProc("napthol");
+    const f = sumProc("folding");
 
-      const s = sumProcess("singing");
-      const m = sumProcess("marcerise");
-      const b = sumProcess("bleach");
-      const c = sumProcess("cpb");
-      const j = sumProcess("jigger");
-      const ex = sumProcess("ex_jigger");
-      const n = sumProcess("napthol");
-      const f = sumProcess("folding");
+    const dyeTotal = c + j + ex + n;
+    const diff = lot - dyeTotal;
 
-      const dyeTotal = c+j+ex+n;
-      const diff = lot - dyeTotal;
+    return {
+      party,
+      sill,
+      quality,
+      lot,
+      process: { s, m, b },
+      dyeing: { c, j, ex, n },
+      folding: f,
+      dyeTotal,
+      diff
+    };
 
-      totalLot += lot;
-      totalDye += dyeTotal;
-
-      return `
-🆔 Sill: ${sill}
-Party: ${party}
-Quality: ${quality}
-Lot: ${lot.toLocaleString()}
-
-Singing: ${s.toLocaleString()}
-Marc: ${m.toLocaleString()}
-Bleach: ${b.toLocaleString()}
-
-CPB: ${c.toLocaleString()}
-JIG: ${j.toLocaleString()}
-EX: ${ex.toLocaleString()}
-NAP: ${n.toLocaleString()}
-
-Folding: ${f.toLocaleString()}
-Dye Total: ${dyeTotal.toLocaleString()}
-Status: ${diff <= 0 ? "EXTRA" : "SHORT"} (${Math.abs(diff).toLocaleString()})
-`;
-    });
-
-    return res.json({
-      reply:
-`📊 SILL / LOT REPORT
-━━━━━━━━━━━━━━━━━━━━
-${blocks.join("\n━━━━━━━━━━━━━━━━━━━━\n")}
-━━━━━━━━━━━━━━━━━━━━
-TOTAL LOT: ${totalLot.toLocaleString()}
-TOTAL DYE: ${totalDye.toLocaleString()}`
-    });
-  }
+  });
 }
 
-/* ===================== PARTY + PROCESS ===================== */
+/* =========================================================
+   PART 2 END – ROUTE STILL OPEN
+========================================================= */
+         /* =========================================================
+   PART 3 – PREMIUM FORMATTER + COMMAND CONTROLLER
+========================================================= */
 
-const partyProcessMatch = question.match(/^([a-z0-9 .&_()-]+)\s+(cpb|jigger|exjigger|ex-jigger|napthol|singing|marcerise|bleach|folding)$/);
+/* ===================== FORMATTERS ===================== */
 
-if (partyProcessMatch) {
+function formatPerDay(proc, data) {
 
-  const partyName = partyProcessMatch[1];
-  const process = partyProcessMatch[2]
+  const today = new Date();
+  const monthName = today.toLocaleString("default", { month: "long" });
+  const year = today.getFullYear();
+
+  const lines = data.days.map(d =>
+    `${String(d.day).padStart(2,"0")} ${monthName.slice(0,3)} : ${d.qty.toLocaleString()} yds`
+  );
+
+  return `
+📊 ═══════════════════════════
+        ${proc.toUpperCase()} DAILY PRODUCTION
+═══════════════════════════
+📅 Month: ${monthName} ${year}
+───────────────────────────
+${lines.join("\n")}
+───────────────────────────
+📈 HIGHEST DAY : ${data.highest.toLocaleString()} yds
+📉 LOWEST DAY  : ${data.lowest.toLocaleString()} yds
+═══════════════════════════
+📊 MONTH TOTAL : ${data.total.toLocaleString()} yds
+═══════════════════════════
+`;
+}
+
+function formatFactorySummary(data) {
+
+  return `
+🏭 ═══════════════════════════
+          FACTORY SUMMARY
+═══════════════════════════
+
+⚙️ PROCESS SECTION
+───────────────────────────
+Singing     : ${data.process.s.toLocaleString()}
+Mercerise   : ${data.process.m.toLocaleString()}
+Bleach      : ${data.process.b.toLocaleString()}
+
+🎨 DYEING SECTION
+───────────────────────────
+CPB         : ${data.dyeing.c.toLocaleString()}
+Jigger      : ${data.dyeing.j.toLocaleString()}
+Ex-Jigger   : ${data.dyeing.ex.toLocaleString()}
+Napthol     : ${data.dyeing.n.toLocaleString()}
+
+🧺 FINISHING
+───────────────────────────
+Folding     : ${data.folding.toLocaleString()}
+
+═══════════════════════════
+📊 TOTAL DYEING : ${data.dyeTotal.toLocaleString()} yds
+═══════════════════════════
+`;
+}
+
+function formatDateReport(data) {
+
+  return `
+📅 ═══════════════════════════
+        DAILY PRODUCTION REPORT
+═══════════════════════════
+
+⚙️ PROCESS SECTION
+───────────────────────────
+Singing     : ${data.process.s.toLocaleString()}
+Mercerise   : ${data.process.m.toLocaleString()}
+Bleach      : ${data.process.b.toLocaleString()}
+
+🎨 DYEING SECTION
+───────────────────────────
+CPB         : ${data.dyeing.c.toLocaleString()}
+Jigger      : ${data.dyeing.j.toLocaleString()}
+Ex-Jigger   : ${data.dyeing.ex.toLocaleString()}
+Napthol     : ${data.dyeing.n.toLocaleString()}
+
+🧺 FINISHING
+───────────────────────────
+Folding     : ${data.folding.toLocaleString()}
+
+═══════════════════════════
+📊 GRAND TOTAL : ${data.total.toLocaleString()} yds
+═══════════════════════════
+`;
+}
+
+function formatPartySummary(reports) {
+
+  const blocks = reports.map(r => `
+🆔 SILL : ${r.sill}
+Quality : ${r.quality}
+Lot     : ${r.lot.toLocaleString()}
+Dye     : ${r.dyeTotal.toLocaleString()}
+Status  : ${r.lot - r.dyeTotal <= 0 ? "🟢 EXTRA" : "🔴 SHORT"}
+`).join("\n───────────────────────────\n");
+
+  return `
+👤 ═══════════════════════════
+            PARTY SUMMARY
+═══════════════════════════
+${blocks}
+═══════════════════════════
+`;
+}
+
+function formatSillReport(reports) {
+
+  const blocks = reports.map(r => `
+🆔 SILL : ${r.sill}
+Party   : ${r.party}
+Quality : ${r.quality}
+Lot     : ${r.lot.toLocaleString()}
+
+⚙️ PROCESS
+Singing     : ${r.process.s.toLocaleString()}
+Mercerise   : ${r.process.m.toLocaleString()}
+Bleach      : ${r.process.b.toLocaleString()}
+
+🎨 DYEING
+CPB         : ${r.dyeing.c.toLocaleString()}
+Jigger      : ${r.dyeing.j.toLocaleString()}
+Ex-Jigger   : ${r.dyeing.ex.toLocaleString()}
+Napthol     : ${r.dyeing.n.toLocaleString()}
+
+🧺 Folding  : ${r.folding.toLocaleString()}
+Total Dye   : ${r.dyeTotal.toLocaleString()}
+Status      : ${r.diff <= 0 ? "🟢 EXTRA" : "🔴 SHORT"}
+`).join("\n═══════════════════════════\n");
+
+  return `
+📊 ═══════════════════════════
+        SILL PRODUCTION REPORT
+═══════════════════════════
+${blocks}
+═══════════════════════════
+`;
+}
+
+/* ===================== HELP ===================== */
+
+if (cleanInput === "help") {
+  return res.json({
+    reply:
+`🤖 ERP COMMAND LIST
+━━━━━━━━━━━━━━━━━━━━
+cpb per day
+jigger per day
+napthol per day
+total dyeing
+totall
+15 feb
+15 feb dyeing
+12345
+noor
+noor cpb`
+  });
+}
+
+/* ===================== COMMAND CONTROLLER ===================== */
+
+// PER DAY
+const perDayMatch = question.match(/(cpb|jigger|ex-jigger|exjigger|napthol|singing|marcerise|bleach|folding)\s*per\s*day/);
+if (perDayMatch) {
+
+  const proc = perDayMatch[1]
     .replace("exjigger","ex_jigger")
     .replace("ex-jigger","ex_jigger");
 
-  const partyRows = db.grey.slice(1).filter(row =>
-    row[2] && row[2].toLowerCase().includes(partyName)
-  );
-
-  if (partyRows.length === 0)
-    return res.json({ reply: "Party পাওয়া যায়নি" });
-
-  let total = 0;
-  let lines = [];
-
-  for (const row of partyRows) {
-
-    const sill = normalizeSill(row[1]);
-    const quality = row[3] || "N/A";
-
-    const qty = db[process].slice(1).reduce((t,r)=>
-      normalizeSill(r[1]) === sill ? t + safeNum(r[6]) : t
-    ,0);
-
-    if (qty > 0) {
-      total += qty;
-      lines.push(`${sill} | ${quality} → ${qty.toLocaleString()} yds`);
-    }
-  }
+  const data = getMonthlyPerDay(proc);
 
   return res.json({
-    reply:
-`👤 PARTY PROCESS REPORT
-Process: ${process.toUpperCase()}
-━━━━━━━━━━━━━━━━━━━━
-${lines.join("\n")}
-━━━━━━━━━━━━━━━━━━━━
-TOTAL: ${total.toLocaleString()} yds`
+    reply: formatPerDay(proc, data)
   });
 }
 
-/* ===================== PARTY FULL SUMMARY ===================== */
-
-const partyOnly = db.grey.slice(1).filter(row =>
-  row[2] && row[2].toLowerCase().includes(question)
-);
-
-if (partyOnly.length > 0 && !question.includes(" ")) {
-
-  let totalLot = 0;
-  let totalDye = 0;
-
-  const blocks = partyOnly.slice(-10).map(row => {
-
-    const sill = normalizeSill(row[1]);
-    const quality = row[3] || "N/A";
-    const lot = safeNum(row[5]);
-
-    const sumProc = (p)=>
-      db[p].slice(1).reduce((t,r)=>
-        normalizeSill(r[1])===sill ? t+safeNum(r[6]) : t
-      ,0);
-
-    const dye = sumProc("cpb")+sumProc("jigger")+sumProc("ex_jigger")+sumProc("napthol");
-
-    totalLot += lot;
-    totalDye += dye;
-
-    return `${sill} | ${quality}
-Lot: ${lot.toLocaleString()}
-Dye: ${dye.toLocaleString()}`;
-  });
-
+// FACTORY SUMMARY
+if (cleanInput === "totall") {
+  const data = getFactoryTotals();
   return res.json({
-    reply:
-`👤 PARTY SUMMARY
-━━━━━━━━━━━━━━━━━━━━
-${blocks.join("\n━━━━━━━━━━━━━━━━━━━━\n")}
-━━━━━━━━━━━━━━━━━━━━
-TOTAL LOT: ${totalLot.toLocaleString()}
-TOTAL DYE: ${totalDye.toLocaleString()}`
+    reply: formatFactorySummary(data)
   });
 }
+
+// DATE BASED
+const keywordDate = getKeywordDate(question);
+if (keywordDate) {
+
+  const data = getDateReport(keywordDate);
+  return res.json({
+    reply: formatDateReport(data)
+  });
+}
+
+// SILL SEARCH
+const numMatch = question.match(/(\d{3,})/);
+if (numMatch) {
+
+  const reports = getSillReport(normalizeSill(numMatch[1]));
+  if (reports)
+    return res.json({ reply: formatSillReport(reports) });
+}
+
+// PARTY SEARCH
+const partyReports = getPartyFullSummary(question);
+if (partyReports)
+  return res.json({ reply: formatPartySummary(partyReports) });
 
 /* ===================== FALLBACK ===================== */
 
@@ -505,6 +560,5 @@ return res.json({
 /* ===================== SERVER START ===================== */
 
 app.listen(PORT, () => {
-  console.log("🚀 Factory ERP AI running on port " + PORT);
+  console.log("🚀 Factory ERP AI – Enterprise Edition running on port " + PORT);
 });
-         
