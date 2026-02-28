@@ -2,14 +2,11 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server started on " + PORT);
-});
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname));
+const router = express.Router();
+
+router.use(cors());
+router.use(express.json());
+router.use(express.static(__dirname));
 
 const SHEET_ID = "17AlSp8QqY3_YmW9bb1W-fMg9m7FFBxtYKXc2Cr9fq3A";
 
@@ -286,11 +283,13 @@ function getSillReport(db, inputNumber) {
     };
   });
 }
+
+
 /* =========================================================
    PART 3 – FORMATTERS + COMMAND CONTROLLER
 ========================================================= */
 
-app.post("/ask", async (req, res) => {
+router.post("/ask", async (req, res) => {
 
   const rawInput = (req.body.question || "").trim();
   const question = rawInput.toLowerCase();
@@ -305,8 +304,10 @@ app.post("/ask", async (req, res) => {
   const db = {};
   keys.forEach((k,i)=> db[k]=results[i]);
 
+  /* --- (এখানে থেকে পুরো তোমার original formatter + controller logic অপরিবর্তিত থাকবে) --- */
 
-  /* ===================== FORMATTERS ===================== */
+});
+/* ===================== FORMATTERS ===================== */
 
   function formatPerDay(proc,data){
 
@@ -634,3 +635,6 @@ TOTAL : ${total.toLocaleString()} yds
   });
 
 });
+
+
+module.exports = router;
